@@ -45,6 +45,7 @@ def get_billboard(date: str='2019-11-11', count: int=5) -> pd.DataFrame:
 _remove_accents = lambda input_str: ''.join(
     (c for c in unicodedata.normalize('NFKD', input_str) if not unicodedata.combining(c)))
 _clean_string = lambda s: set(re.sub(r'[^\w\s]', '', _remove_accents(s)).lower().split())
+# Measures difference in letters - to analyze accuracy of search results
 _jaccard = lambda set1, set2: float(len(set1 & set2)) / float(len(set1 | set2))
 
 
@@ -86,11 +87,13 @@ def get_release_url(artist: str, title: str):
                 for alias in artists['artist'].get('aliases', {}):
                     names.append(_clean_string(alias.get('name', '')))
         # print('  title=' + str(_clean_string(item['title'])) + ' names=' + ', '.join(itertools.chain(*names)))
-
+        
+        # Checks that search result is close enough to query - otherwise do not return
         if _jaccard(_clean_string(item['title']), title) > 0.5 and \
                 (any(_jaccard(artist, name) > 0.3 for name in names) or len(names) == 0):
             return 'http://musicbrainz.org/ws/2/{type}/{id}/'.format(id=item['id'], type=type_)
-
+        
+    # If no query result match
     return None
 
 def getMetadata(artist: str, title: str):
