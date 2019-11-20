@@ -93,7 +93,7 @@ def get_release_url(artist: str, title: str):
 
     return None
 
-def getCountsData(artist: str, title: str):
+def getMetadata(artist: str, title: str):
         # Get url for album, if none do nothing
         url = get_release_url(artist, title)
         if url is None:
@@ -115,7 +115,7 @@ def updateBillboardDf(dataframe: pd.DataFrame):
         a = row['artist']
         t = row['title']
 
-        raw_data = getCountsData(a, t)
+        raw_data = getMetadata(a, t)
         if raw_data is None:
             continue
 
