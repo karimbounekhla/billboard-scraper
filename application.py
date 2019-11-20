@@ -10,8 +10,14 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
-def get_billboard_top_albums_dataframe(date: str='2001-06-02', count: int=5) -> pd.DataFrame:
-    url = "https://www.billboard.com/charts/billboard-200/" + date
+def get_billboard_top_albums_dataframe(date: str='2019-11-11', count: int=5) -> pd.DataFrame:
+    """
+    Scraps the Billboard website and returns a dataframe containing the top albums from a given week
+    :param date: week in the format YYYY-MM-DD (default -> 2019-11-11
+    :param count: number of albums from the top (default -> 5)
+    :return: Pandas Dataframe with album, artist, rank and # of weeks on chart
+    """
+    url = "https://www.billboard.com/charts/billboard-200/" + str(date)
     html=requests.get(url, verify=False).text
     soup = BeautifulSoup(html, 'lxml')
     
@@ -44,9 +50,9 @@ _jaccard = lambda set1, set2: float(len(set1 & set2)) / float(len(set1 | set2))
 def search(entity_type: str, query: str):
     """
     Use the musicbrainz API to retrieve a JSON file containing album information
-    :param entity_type:
-    :param query:
-    :return:
+    :param entity_type: 'release' (as per API documentation)
+    :param query: search query
+    :return: JSON file
     """
     return requests.get(
         'http://musicbrainz.org/ws/2/{entity}/'.format(entity=entity_type),
@@ -58,6 +64,12 @@ def search(entity_type: str, query: str):
 
 
 def get_release_url(artist: str, title: str):
+    """
+    Gets the release url for a particular artist and album in the musibrainz database
+    :param artist: artist name
+    :param title: album title
+    :return: release url (to scrap JSON from) or None if not found
+    """
     type_ = 'release'
     search_results = search(type_, '%s AND artist:%s' % (title, artist))
 
@@ -80,4 +92,9 @@ def get_release_url(artist: str, title: str):
 
     return None
 
+count = 5
+week = "2019-11-11"
+top_5_albums = get_billboard_top_albums_dataframe(week, count)
+print("\nBillboard Top", str(count), "for the week", week, ":\n")
+print(top_5_albums)
 
