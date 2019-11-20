@@ -11,7 +11,7 @@ How to Use:
 ## Tools 
 
 * Python 3.7.3 - The Back-End
-* BeautifulSoup4 / Requests
+* BeautifulSoup4, Requests, Pandas - Libraries
 
 ## Screenshots
 
