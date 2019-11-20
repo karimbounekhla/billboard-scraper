@@ -2,6 +2,9 @@ from bs4 import BeautifulSoup
 import requests
 import numpy as np
 import pandas as pd
+import itertools
+import unicodedata
+import re
 # hide HTTPS warning
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -31,6 +34,50 @@ def get_billboard_top_albums_dataframe(date: str='2001-06-02', count: int=5) -> 
 
     return df_billboard[:count]
 
-dfb = get_billboard_top_albums_dataframe()
+# String manipulation / cleaning method
+_remove_accents = lambda input_str: ''.join(
+    (c for c in unicodedata.normalize('NFKD', input_str) if not unicodedata.combining(c)))
+_clean_string = lambda s: set(re.sub(r'[^\w\s]', '', _remove_accents(s)).lower().split())
+_jaccard = lambda set1, set2: float(len(set1 & set2)) / float(len(set1 | set2))
 
-print(dfb)
+
+def search(entity_type: str, query: str):
+    """
+    Use the musicbrainz API to retrieve a JSON file containing album information
+    :param entity_type:
+    :param query:
+    :return:
+    """
+    return requests.get(
+        'http://musicbrainz.org/ws/2/{entity}/'.format(entity=entity_type),
+        params={
+            'fmt': 'json',
+            'query': query
+        }
+    ).json()
+
+
+def get_release_url(artist: str, title: str):
+    type_ = 'release'
+    search_results = search(type_, '%s AND artist:%s' % (title, artist))
+
+    artist = _clean_string(artist)
+    title = _clean_string(title)
+
+    #     print("title = " + str(title) +' artist=' + str(artist))
+    for item in search_results.get(type_ + 's', []):
+        names = list()
+        for artists in item['artist-credit']:
+            if 'artist' in artists:
+                names.append(_clean_string(artists['artist']['name']))
+                for alias in artists['artist'].get('aliases', {}):
+                    names.append(_clean_string(alias.get('name', '')))
+        # print('  title=' + str(_clean_string(item['title'])) + ' names=' + ', '.join(itertools.chain(*names)))
+
+        if _jaccard(_clean_string(item['title']), title) > 0.5 and \
+                (any(_jaccard(artist, name) > 0.3 for name in names) or len(names) == 0):
+            return 'http://musicbrainz.org/ws/2/{type}/{id}/'.format(id=item['id'], type=type_)
+
+    return None
+
+
