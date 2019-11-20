@@ -11,7 +11,7 @@ import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 
-def get_billboard_top_albums_dataframe(date: str='2019-11-11', count: int=5) -> pd.DataFrame:
+def get_billboard(date: str='2019-11-11', count: int=5) -> pd.DataFrame:
     """
     Scraps the Billboard website and returns a dataframe containing the top albums from a given week
     :param date: week in the format YYYY-MM-DD (default -> 2019-11-11
@@ -94,20 +94,31 @@ def get_release_url(artist: str, title: str):
     return None
 
 def getMetadata(artist: str, title: str):
-        # Get url for album, if none do nothing
-        url = get_release_url(artist, title)
-        if url is None:
-            return
-        # discids contains the required information
-        return requests.get(url,
-                            params={
-                                'inc': 'discids',
-                                'fmt': 'json'
-                            }
-                            ).json()
+    """
+    Gets the metadata in JSON format from the MusicBrainz API
+    :param artist: artist name
+    :param title: album title
+    :return: metadata in json format, otherwise None if not found
+    """
+    # Get url for album, if none do nothing
+    url = get_release_url(artist, title)
+    if url is None:
+        return
+    # discids contains the required information for track_count
+    # Consult API for more information
+    return requests.get(url,
+                        params={
+                            'inc': 'discids',
+                            'fmt': 'json'
+                        }
+                        ).json()
 
 
-def updateBillboardDf(dataframe: pd.DataFrame):
+def updateBillboardMetadata(dataframe: pd.DataFrame):
+    """
+    Update the dataframe with metadata - currently only supports track_count
+    :param dataframe: result dataframe
+    """
     dataframe['track_count'] = ''
 
     # Iterate through dataframe, getting JSON for each album
@@ -132,11 +143,11 @@ if __name__ == "__main__":
     week = input("\nEnter the week in the format YYYY-MM-DD : ")
     count = int(input("Enter the number of top albums to show (max 200) : "))
 
-    top_5_albums = get_billboard_top_albums_dataframe(week, count)
-    # Allow display to show
+    top_albums = get_billboard(week, count)
+    updateBillboardMetadata(top_albums)
+    # Allow terminal to display results without truncation
     pd.set_option('display.width', 1000)
     pd.set_option('display.max_columns',1000)
-    updateBillboardDf(top_5_albums)
     print("\nBillboard Top", str(count), "for the week", week, ":\n")
-    print(top_5_albums)
+    print(top_albums)
 
