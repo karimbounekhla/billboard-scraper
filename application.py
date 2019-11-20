@@ -5,6 +5,7 @@ import pandas as pd
 import itertools
 import unicodedata
 import re
+import json
 # hide HTTPS warning
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -92,9 +93,47 @@ def get_release_url(artist: str, title: str):
 
     return None
 
-count = 5
-week = "2019-11-11"
-top_5_albums = get_billboard_top_albums_dataframe(week, count)
-print("\nBillboard Top", str(count), "for the week", week, ":\n")
-print(top_5_albums)
+def getCountsData(artist: str, title: str):
+        # Get url for album, if none do nothing
+        url = get_release_url(artist, title)
+        if url is None:
+            return
+        # discids contains the required information
+        return requests.get(url,
+                            params={
+                                'inc': 'discids',
+                                'fmt': 'json'
+                            }
+                            ).json()
+
+
+def updateBillboardDf(dataframe: pd.DataFrame):
+    dataframe['track_count'] = ''
+
+    # Iterate through dataframe, getting JSON for each album
+    for index, row in dataframe.iterrows():
+        a = row['artist']
+        t = row['title']
+
+        raw_data = getCountsData(a, t)
+        if raw_data is None:
+            continue
+
+        # Get track count from JSON
+        track_count = raw_data['media'][0]['track-count']
+        row['track_count'] = track_count
+
+        # Add Any Other data as needed (See API Documentation)
+
+
+if __name__ == "__main__":
+    count = 5
+    week = "2019-11-11"
+    top_5_albums = get_billboard_top_albums_dataframe(week, count)
+    # Allow display to show 
+    pd.set_option('display.width', 1000)
+    pd.set_option('display.max_columns',1000)
+    updateBillboardDf(top_5_albums)
+    print("\nBillboard Top", str(count), "for the week", week, ":\n")
+    print(top_5_albums)
 
