@@ -120,17 +120,20 @@ def updateBillboardDf(dataframe: pd.DataFrame):
             continue
 
         # Get track count from JSON
-        track_count = raw_data['media'][0]['track-count']
-        row['track_count'] = track_count
+        if ('media' in raw_data):
+            track_count = raw_data['media'][0]['track-count']
+            row['track_count'] = track_count
 
         # Add Any Other data as needed (See API Documentation)
 
 
 if __name__ == "__main__":
-    count = 5
-    week = "2019-11-11"
+    # TODO - add input validation
+    week = input("\nEnter the week in the format YYYY-MM-DD : ")
+    count = int(input("Enter the number of top albums to show (max 200) : "))
+
     top_5_albums = get_billboard_top_albums_dataframe(week, count)
-    # Allow display to show 
+    # Allow display to show
     pd.set_option('display.width', 1000)
     pd.set_option('display.max_columns',1000)
     updateBillboardDf(top_5_albums)
